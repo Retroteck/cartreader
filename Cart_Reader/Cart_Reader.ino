@@ -2144,6 +2144,11 @@ int32_t initializeClockOffset() {
 void setup() {
   // Set Button Pin PG2 to Input
   DDRG &= ~(1 << 2);
+  #ifdef V2LCD                  // V2 boards have no external pull-up
+  PORTG |= (1 << 2);          // enable the internal 10 kΩ pull-up
+  pinMode(PIN_IN1, INPUT_PULLUP);   // rotary channel A pull-up
+  pinMode(PIN_IN2, INPUT_PULLUP);   // rotary channel B pull-up
+#endif
 #if defined(HW5) && !defined(ENABLE_VSELECT)
   /**
      HW5 has status LED connected to PD7
@@ -2163,6 +2168,9 @@ void setup() {
      Set pin PD7 to input for button
    **/
   DDRD &= ~(1 << 7);
+  #ifdef V2LCD
+  PORTD |= (1 << 7);          // enable the internal 10 kΩ pull-up
+  #endif
 #endif /* HW5 &| ENABLE_VSELECT */
 
   // Set power to low to protect carts
@@ -2357,19 +2365,39 @@ void setColor_RGB(byte r, byte g, byte b) {
   uint8_t lcdConfColor = configGetLong(F("lcd.confColor"));
 
   if (lcdConfColor > 0) {
-    uint8_t lcdRed = configGetLong(F("lcd.red"));
+    uint8_t lcdRed   = configGetLong(F("lcd.red"));
     uint8_t lcdGreen = configGetLong(F("lcd.green"));
-    uint8_t lcdBlue = configGetLong(F("lcd.blue"));
+    uint8_t lcdBlue  = configGetLong(F("lcd.blue"));
 
+#ifdef V2LCD                     // BG LED = pixel 2 on V2
+    pixels.setPixelColor(2, pixels.Color(lcdGreen, lcdRed, lcdBlue));
+#else                            // BG LED = pixel 0 on V3
     pixels.setPixelColor(0, pixels.Color(lcdGreen, lcdRed, lcdBlue));
+#endif
   } else {
+#ifdef V2LCD
+    pixels.setPixelColor(2, pixels.Color(OPTION_LCD_BG_COLOR));
+#else
     pixels.setPixelColor(0, pixels.Color(OPTION_LCD_BG_COLOR));
+#endif
   }
 #else  /* !ENABLE_CONFIG */
+#ifdef V2LCD
+  pixels.setPixelColor(2, pixels.Color(OPTION_LCD_BG_COLOR));
+#else
   pixels.setPixelColor(0, pixels.Color(OPTION_LCD_BG_COLOR));
+#endif
 #endif /* ENABLE_CONFIG */
+
+  /* ---------- status LEDs ---------- */
+#ifdef V2LCD
+  pixels.setPixelColor(1, pixels.Color(g, r, b));
+  pixels.setPixelColor(0, pixels.Color(g, r, b));
+#else
   pixels.setPixelColor(1, pixels.Color(g, r, b));
   pixels.setPixelColor(2, pixels.Color(g, r, b));
+#endif
+
   pixels.show();
 #elif defined(ENABLE_CA_LED)
   // Set color of analog 4 Pin common anode RGB LED

@@ -571,6 +571,7 @@ also needs ENABLE_FLASH8 and ENABLE_FLASH16 to be enabled
 
 #if (defined(HW4) || defined(HW5))
 #define ENABLE_LCD
+//#define V2LCD // Enable this if you have the V2 LCD module
 #define ENABLE_NEOPIXEL
 #define ENABLE_ROTARY
 //# define rotate_counter_clockwise
